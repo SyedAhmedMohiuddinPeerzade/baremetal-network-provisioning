@@ -31,6 +31,7 @@ from neutron.plugins.common import constants
 from neutron.plugins.ml2.common import exceptions as ml2_exc
 from neutron.plugins.ml2 import driver_api as api
 
+from baremetal_network_provisioning.common.barbican import credential_manager
 from baremetal_network_provisioning.common import constants as hp_const
 from baremetal_network_provisioning.db import bm_nw_provision_db as db
 from baremetal_network_provisioning import managers
@@ -426,9 +427,17 @@ class HPEMechanismDriver(api.MechanismDriver):
             if not uuidutils.is_uuid_like(prov_creds):
                 netconf_cred = db.get_netconf_cred_by_name(db_context,
                                                            prov_creds)
+                if netconf_cred.get('password'):
+                    password = credential_manager.retrieve_secret(
+                        netconf_cred['password'])
+                    netconf_cred['password'] = password
             else:
                 netconf_cred = db.get_netconf_cred_by_id(db_context,
                                                          prov_creds)
+                if netconf_cred.get('password'):
+                    password = credential_manager.retrieve_secret(
+                        netconf_cred['password'])
+                    netconf_cred['password'] = password
             if not netconf_cred:
                 LOG.error(_LE("Credentials does not match"))
                 self._raise_ml2_error(wexc.HTTPNotFound, '')

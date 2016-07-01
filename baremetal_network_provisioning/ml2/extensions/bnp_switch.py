@@ -22,6 +22,7 @@ from neutron.api.v2 import base
 from neutron.api.v2 import resource
 from neutron import wsgi
 
+from baremetal_network_provisioning.common.barbican import credential_manager
 from baremetal_network_provisioning.common import constants as const
 from baremetal_network_provisioning.common import validators
 from baremetal_network_provisioning.db import bm_nw_provision_db as db
@@ -199,8 +200,16 @@ class BNPSwitchController(wsgi.Controller):
             if not uuidutils.is_uuid_like(creds):
                 access_parameters = db.get_netconf_cred_by_name_and_protocol(
                     context, creds, protocol)
+                if access_parameters.get('password'):
+                    password = credential_manager.retrieve_secret(
+                        access_parameters['password'])
+                    access_parameters['password'] = password
             else:
                 access_parameters = db.get_netconf_cred_by_id(context, creds)
+                if access_parameters.get('password'):
+                    password = credential_manager.retrieve_secret(
+                        access_parameters['password'])
+                    access_parameters['password'] = password
         if not access_parameters:
             raise webob.exc.HTTPBadRequest(
                 _("Credentials not found for Id or name: %s") % creds)

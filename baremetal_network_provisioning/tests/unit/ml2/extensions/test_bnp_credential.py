@@ -18,6 +18,7 @@ from neutron.tests.unit import testlib_api
 
 from oslo_utils import uuidutils
 
+from baremetal_network_provisioning.common.barbican import credential_manager
 from baremetal_network_provisioning.ml2.extensions import bnp_credential
 
 import os.path
@@ -267,6 +268,8 @@ class TestBnpCredential(test_plugin.NeutronDbPluginV2TestCase,
                                                              "NewCredName"}}
         updated_dict = self._test_update_credential_for_netconf_ssh(
             update_data, credential_id)
+        updated_dict['password'] = credential_manager.retrieve_secret(
+            updated_dict['password'])
         expected_dict = {"id": credential_id, "protocol_type": "netconf_ssh",
                          "user_name": "NewFakeUserName",
                          "password": "NewFakePassword", "key_path":
@@ -281,6 +284,8 @@ class TestBnpCredential(test_plugin.NeutronDbPluginV2TestCase,
             "user_name": "NewFakeUserName", "password": "NewFakePassword"},
             "name": "NewCredName"}}
         updated_dict = self._test_update_credential(update_data, credential_id)
+        updated_dict['password'] = credential_manager.retrieve_secret(
+            updated_dict['password'])
         expected_dict = {"id": credential_id, "protocol_type": "netconf_soap",
                          "user_name": "NewFakeUserName",
                          "password": "NewFakePassword", "key_path": None,
@@ -330,6 +335,8 @@ class TestBnpCredential(test_plugin.NeutronDbPluginV2TestCase,
         update_data = {"bnp_credential": {"name": "NewCredName"}}
         updated_dict = self._test_update_credential_for_netconf_ssh(
             update_data, credential_id)
+        updated_dict['password'] = credential_manager.retrieve_secret(
+            updated_dict['password'])
         expected_dict = {"id": credential_id, "protocol_type": "netconf_ssh",
                          "user_name": "FakeUserName",
                          "password": "FakePassword", "key_path":
@@ -342,6 +349,8 @@ class TestBnpCredential(test_plugin.NeutronDbPluginV2TestCase,
         credential_id = credential["bnp_credential"]["id"]
         update_data = {"bnp_credential": {"name": "NewCredName"}}
         updated_dict = self._test_update_credential(update_data, credential_id)
+        updated_dict['password'] = credential_manager.retrieve_secret(
+            updated_dict['password'])
         expected_dict = {"id": credential_id, "protocol_type": "netconf_soap",
                          "user_name": "FakeUserName",
                          "password": "FakePassword", "key_path": None,

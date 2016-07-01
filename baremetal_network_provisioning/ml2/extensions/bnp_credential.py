@@ -21,9 +21,11 @@ from neutron.api.v2 import base
 from neutron.api.v2 import resource
 from neutron import wsgi
 
+from baremetal_network_provisioning.common.barbican import credential_manager
 from baremetal_network_provisioning.common import constants as const
 from baremetal_network_provisioning.common import validators
 from baremetal_network_provisioning.db import bm_nw_provision_db as db
+
 
 from oslo_log import log as logging
 from oslo_utils import uuidutils
@@ -132,6 +134,8 @@ class BNPCredentialController(wsgi.Controller):
         if snmp_cred:
             db.delete_snmp_cred_by_id(context, id)
         elif netconf_cred:
+            if netconf_cred.get('password'):
+                credential_manager.delete_secret(netconf_cred['password'])
             db.delete_netconf_cred_by_id(context, id)
         else:
             raise webob.exc.HTTPNotFound(
@@ -152,6 +156,9 @@ class BNPCredentialController(wsgi.Controller):
             db_snmp_cred = self._creds_to_show(db_snmp_cred)
             return {const.BNP_CREDENTIAL_RESOURCE_NAME: dict(db_snmp_cred)}
         else:
+            if body[protocol].get('password'):
+                body[protocol]['password'] = credential_manager.create_secret(
+                    body[protocol]['password'])
             db_netconf_cred = self._create_netconf_creds(
                 context, body, protocol)
             db_netconf_cred = self._creds_to_show(db_netconf_cred)
@@ -236,7 +243,16 @@ class BNPCredentialController(wsgi.Controller):
                 return switch_creds_dict
             switch_creds = db.get_netconf_cred_by_id(context, id)
             if switch_creds:
+                if switch_creds.get('password'):
+                    password = credential_manager.retrieve_secret(
+                        switch_creds['password'])
+                    credential_manager.delete_secret(switch_creds['password'])
+                    switch_creds['password'] = password
                 switch_creds_dict = self._update_dict(body, dict(switch_creds))
+                if switch_creds_dict.get('password'):
+                    password = credential_manager.create_secret(
+                        switch_creds_dict['password'])
+                    switch_creds_dict['password'] = password
                 db.update_bnp_netconf_cred_by_id(
                     context, id, switch_creds_dict)
                 return switch_creds_dict
@@ -292,7 +308,15 @@ class BNPCredentialController(wsgi.Controller):
             params = body.pop(protocol)
             for key, value in params.iteritems():
                 body[key] = value
+            if switch_creds.get('password'):
+                password = credential_manager.retrieve_secret(
+                    switch_creds['password'])
+                credential_manager.delete_secret(switch_creds['password'])
+                switch_creds['password'] = password
             creds_dict = self._update_dict(body, dict(switch_creds))
+            if creds_dict.get('password'):
+                creds_dict['password'] = credential_manager.create_secret(
+                    creds_dict['password'])
             db.update_bnp_netconf_cred_by_id(context, id, creds_dict)
             return creds_dict
 
@@ -311,7 +335,15 @@ class BNPCredentialController(wsgi.Controller):
                           " both has to be provided"))
             for key, value in params.iteritems():
                 body[key] = value
+            if switch_creds.get('password'):
+                password = credential_manager.retrieve_secret(
+                    switch_creds['password'])
+                credential_manager.delete_secret(switch_creds['password'])
+                switch_creds['password'] = password
             creds_dict = self._update_dict(body, dict(switch_creds))
+            if creds_dict.get('password'):
+                creds_dict['password'] = credential_manager.create_secret(
+                    creds_dict['password'])
             db.update_bnp_netconf_cred_by_id(context, id, creds_dict)
             return creds_dict
 
